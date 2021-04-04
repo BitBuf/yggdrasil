@@ -46,7 +46,7 @@ object Yggdrasil {
      *
      * @author dewy
      */
-    suspend fun authenticate(username: String, password: String, clientToken: UUID = UUID.randomUUID(), game: Game = Game.MINECRAFT): TokenPair = suspendCoroutine { cont ->
+    suspend fun authenticate(username: String, password: String, game: Game = Game.MINECRAFT, clientToken: UUID = UUID.randomUUID()): TokenPair = suspendCoroutine { cont ->
         AUTHENTICATE
             .httpPost()
             .jsonBody(
