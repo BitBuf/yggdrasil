@@ -5,16 +5,23 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import dev.dewy.yggdrasil.extensions.trimmed
 import dev.dewy.yggdrasil.internal.AuthAgent
 import dev.dewy.yggdrasil.internal.AuthenticateRequest
 import dev.dewy.yggdrasil.internal.ErrorResponse
 import dev.dewy.yggdrasil.internal.SignOutRequest
-import dev.dewy.yggdrasil.internal.TokenRequest
 import dev.dewy.yggdrasil.models.Game
+import dev.dewy.yggdrasil.models.TokenPair
+import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
+/**
+ * A set of helper functions to manually make requests to Mojang's Yggdrasil server.
+ *
+ * @author dewy
+ */
 object Yggdrasil {
     private const val AUTH_SERVER = "https://authserver.mojang.com"
 
@@ -28,16 +35,28 @@ object Yggdrasil {
     private val gson = Gson()
 
 
-    suspend fun authenticate(username: String, password: String, game: Game): String = suspendCoroutine { cont ->
+    /**
+     * Authenticate with a Mojang username and password, and get a [TokenPair] back.
+     *
+     * @param username The Mojang account's "username" (email for migrated accounts, IGN for legacy accounts).
+     * @param password The Mojang account's password.
+     * @param clientToken You can specify a client token [UUID] to reuse. A randomly generated UUID by default.
+     * @param game The [Game] you're trying to authenticate with; Minecraft by default.
+     *
+     * @return An access token and client identifier token, usable for authentication with any Mojang service.
+     *
+     * @author dewy
+     */
+    suspend fun authenticate(username: String, password: String, clientToken: UUID = UUID.randomUUID(), game: Game = Game.MINECRAFT): TokenPair = suspendCoroutine { cont ->
         AUTHENTICATE
             .httpPost()
             .jsonBody(
-                AuthenticateRequest(username, password, AuthAgent(game.title, 1)), gson
+                AuthenticateRequest(AuthAgent(game.title, 1), username, password, clientToken.trimmed())
             )
             .responseString { _, _, result ->
                 when (result) {
                     is Result.Success -> {
-                        cont.resume(extractToken(result.get()))
+                        cont.resume(extractTokenPair(result.get()))
                     }
 
                     is Result.Failure -> {
@@ -47,16 +66,24 @@ object Yggdrasil {
             }
     }
 
-    suspend fun refresh(accessToken: String, clientToken: String): String = suspendCoroutine { cont ->
+    /**
+     * Refreshes a valid access token, invalidating the original and returning a new one.
+     * Note that the provided access token will be **invalidated**, with the newly returned [TokenPair]'s accessToken being usable.
+     *
+     * @param pair The token pair to refresh.
+     *
+     * @return Refreshed token pair, with an identical client token to the original [pair] but a different access token.
+     *
+     * @author dewy
+     */
+    suspend fun refresh(pair: TokenPair): TokenPair = suspendCoroutine { cont ->
         REFRESH
             .httpPost()
-            .jsonBody(
-                TokenRequest(accessToken, clientToken), gson
-            )
+            .jsonBody(pair)
             .responseString { _, _, result ->
                 when (result) {
                     is Result.Success -> {
-                        cont.resume(extractToken(result.get()))
+                        cont.resume(extractTokenPair(result.get()))
                     }
 
                     is Result.Failure -> {
@@ -66,26 +93,38 @@ object Yggdrasil {
             }
     }
 
-    suspend fun validate(accessToken: String, clientToken: String) = suspendCoroutine<Unit> { cont ->
+    /**
+     * Returns whether or not an access token is usable for authentication with a Minecraft server.
+     * If it returns false, it's recommended to [refresh] your [TokenPair].
+     *
+     * @param pair The token pair to validate.
+     *
+     * @return Whether or not an access token is usable for authentication with a Minecraft server.
+     *
+     * @author dewy
+     */
+    suspend fun validate(pair: TokenPair): Boolean = suspendCoroutine { cont ->
         VALIDATE
             .httpPost()
-            .jsonBody(
-                TokenRequest(accessToken, clientToken), gson
-            )
+            .jsonBody(pair)
             .responseString { _, _, result ->
-                if (result is Result.Failure) {
-                    cont.resumeWithException(getException(result.getException().errorData.toString(Charsets.UTF_8)))
-                }
-
-                cont.resume(Unit)
+                cont.resume(result is Result.Success)
             }
     }
 
+    /**
+     * Invalidate all tokens associated with an account via its [username] and [password].
+     *
+     * @param username The Mojang account's "username" (email for migrated accounts, IGN for legacy accounts).
+     * @param password The Mojang account's password.
+     *
+     * @author dewy
+     */
     suspend fun signOut(username: String, password: String) = suspendCoroutine<Unit> { cont ->
         SIGN_OUT
             .httpPost()
             .jsonBody(
-                SignOutRequest(username, password), gson
+                SignOutRequest(username, password)
             )
             .responseString { _, _, result ->
                 if (result is Result.Failure) {
@@ -96,12 +135,17 @@ object Yggdrasil {
             }
     }
 
-    suspend fun invalidate(accessToken: String, clientToken: String) = suspendCoroutine<Unit> { cont ->
+    /**
+     * Invalidate a specific [TokenPair].
+     *
+     * @param pair The access token and client identifier token to invalidate.
+     *
+     * @author dewy
+     */
+    suspend fun invalidate(pair: TokenPair) = suspendCoroutine<Unit> { cont ->
         INVALIDATE
             .httpPost()
-            .jsonBody(
-                TokenRequest(accessToken, clientToken), gson
-            )
+            .jsonBody(pair)
             .responseString { _, _, result ->
                 if (result is Result.Failure) {
                     cont.resumeWithException(getException(result.getException().errorData.toString(Charsets.UTF_8)))
@@ -117,5 +161,9 @@ object Yggdrasil {
         return YggdrasilException("${errorResponse.error}: ${errorResponse.errorMessage}")
     }
 
-    private fun extractToken(fullResponse: String) = gson.fromJson(fullResponse, JsonObject::class.java)["accessToken"].asString
+    private fun extractTokenPair(fullResponse: String): TokenPair {
+        val obj = gson.fromJson(fullResponse, JsonObject::class.java)
+
+        return TokenPair(obj["accessToken"].asString, obj["clientToken"].asString)
+    }
 }
