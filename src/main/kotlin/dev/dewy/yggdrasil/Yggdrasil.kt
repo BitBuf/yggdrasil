@@ -10,8 +10,7 @@ import dev.dewy.yggdrasil.internal.AuthAgent
 import dev.dewy.yggdrasil.internal.AuthenticateRequest
 import dev.dewy.yggdrasil.internal.ErrorResponse
 import dev.dewy.yggdrasil.internal.SignOutRequest
-import dev.dewy.yggdrasil.models.Game
-import dev.dewy.yggdrasil.models.TokenPair
+import dev.dewy.yggdrasil.models.*
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -158,7 +157,10 @@ object Yggdrasil {
     private fun getException(exception: String): YggdrasilException {
         val errorResponse = gson.fromJson(exception, ErrorResponse::class.java)
 
-        return YggdrasilException("${errorResponse.error}: ${errorResponse.errorMessage}")
+        return when (errorResponse.error) {
+            "ForbiddenOperationException" -> InvalidCredentialsException(errorResponse.errorMessage)
+            else -> YggdrasilException(errorResponse.errorMessage)
+        }
     }
 
     private fun extractTokenPair(fullResponse: String): TokenPair {
