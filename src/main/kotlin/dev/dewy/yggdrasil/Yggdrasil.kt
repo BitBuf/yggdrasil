@@ -10,7 +10,10 @@ import dev.dewy.yggdrasil.internal.AuthAgent
 import dev.dewy.yggdrasil.internal.AuthenticateRequest
 import dev.dewy.yggdrasil.internal.ErrorResponse
 import dev.dewy.yggdrasil.internal.SignOutRequest
-import dev.dewy.yggdrasil.models.*
+import dev.dewy.yggdrasil.models.Game
+import dev.dewy.yggdrasil.models.InvalidCredentialsException
+import dev.dewy.yggdrasil.models.TokenPair
+import dev.dewy.yggdrasil.models.YggdrasilException
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -30,9 +33,7 @@ object Yggdrasil {
     private const val SIGN_OUT = "$AUTH_SERVER/signout"
     private const val INVALIDATE = "$AUTH_SERVER/invalidate"
 
-
     private val gson = Gson()
-
 
     /**
      * Authenticate with a Mojang username and password, and get a [TokenPair] back.
