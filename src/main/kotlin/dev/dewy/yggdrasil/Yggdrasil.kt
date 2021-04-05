@@ -50,7 +50,7 @@ object Yggdrasil {
         AUTHENTICATE
             .httpPost()
             .jsonBody(
-                AuthenticateRequest(AuthAgent(game.title, 1), username, password, clientToken.toString().replace("-", ""))
+                AuthenticateRequest(AuthAgent(game.title, 1), username, password, clientToken.toString().replace("-", "")), gson
             )
             .responseString { _, _, result ->
                 when (result) {
@@ -78,7 +78,9 @@ object Yggdrasil {
     suspend fun refresh(pair: TokenPair): TokenPair = suspendCoroutine { cont ->
         REFRESH
             .httpPost()
-            .jsonBody(pair)
+            .jsonBody(
+                pair, gson
+            )
             .responseString { _, _, result ->
                 when (result) {
                     is Result.Success -> {
@@ -105,7 +107,9 @@ object Yggdrasil {
     suspend fun validate(pair: TokenPair): Boolean = suspendCoroutine { cont ->
         VALIDATE
             .httpPost()
-            .jsonBody(pair)
+            .jsonBody(
+                pair, gson
+            )
             .responseString { _, _, result ->
                 cont.resume(result is Result.Success)
             }
@@ -123,7 +127,7 @@ object Yggdrasil {
         SIGN_OUT
             .httpPost()
             .jsonBody(
-                SignOutRequest(username, password)
+                SignOutRequest(username, password), gson
             )
             .responseString { _, _, result ->
                 if (result is Result.Failure) {
@@ -144,7 +148,9 @@ object Yggdrasil {
     suspend fun invalidate(pair: TokenPair) = suspendCoroutine<Unit> { cont ->
         INVALIDATE
             .httpPost()
-            .jsonBody(pair)
+            .jsonBody(
+                pair, gson
+            )
             .responseString { _, _, result ->
                 if (result is Result.Failure) {
                     cont.resumeWithException(getException(result.getException().errorData.toString(Charsets.UTF_8)))
