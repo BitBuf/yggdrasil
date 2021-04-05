@@ -5,7 +5,6 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import dev.dewy.yggdrasil.extensions.trimmed
 import dev.dewy.yggdrasil.internal.AuthAgent
 import dev.dewy.yggdrasil.internal.AuthenticateRequest
 import dev.dewy.yggdrasil.internal.ErrorResponse
@@ -51,7 +50,7 @@ object Yggdrasil {
         AUTHENTICATE
             .httpPost()
             .jsonBody(
-                AuthenticateRequest(AuthAgent(game.title, 1), username, password, clientToken.trimmed())
+                AuthenticateRequest(AuthAgent(game.title, 1), username, password, clientToken.toString().replace("-", ""))
             )
             .responseString { _, _, result ->
                 when (result) {
