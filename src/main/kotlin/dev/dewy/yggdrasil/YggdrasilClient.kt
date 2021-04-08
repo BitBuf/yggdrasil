@@ -1,6 +1,7 @@
 package dev.dewy.yggdrasil
 
 import dev.dewy.yggdrasil.models.Game
+import dev.dewy.yggdrasil.models.InvalidCredentialsException
 import dev.dewy.yggdrasil.models.TokenPair
 import java.util.UUID
 
@@ -9,12 +10,11 @@ import java.util.UUID
  *
  * @author dewy
  */
-class YggdrasilClient {
-    var username = ""
-    var password = ""
-
-    var accessToken = ""
-    var clientIdentifier = ""
+class YggdrasilClient(
+    val username: String,
+    val password: String
+) {
+    var tokenPair: TokenPair? = null
 
     /**
      * Sign into Yggdrasil with the username and password you've set.
@@ -25,9 +25,7 @@ class YggdrasilClient {
      * @author dewy
      */
     suspend fun signIn(game: Game = Game.MINECRAFT, clientIdentifier: UUID = UUID.randomUUID()) {
-        if (username.isNotEmpty() && password.isNotEmpty()) {
-            assignNewPair(Yggdrasil.authenticate(username, password, game, clientIdentifier))
-        }
+        tokenPair = Yggdrasil.authenticate(username, password, game, clientIdentifier)
     }
 
     /**
@@ -36,10 +34,10 @@ class YggdrasilClient {
      * @author dewy
      */
     suspend fun refresh() {
-        if (accessToken.isNotEmpty() && clientIdentifier.isNotEmpty()) {
-            val refreshedPair = Yggdrasil.refresh(TokenPair(accessToken, clientIdentifier))
-
-            assignNewPair(refreshedPair)
+        tokenPair?.let {
+            tokenPair = Yggdrasil.refresh(it)
+        } ?: kotlin.run {
+            throw InvalidCredentialsException("Unable to refresh(): token pair is null in YggdrasilClient.")
         }
     }
 
@@ -50,17 +48,30 @@ class YggdrasilClient {
      *
      * @author dewy
      */
-    suspend fun isUsable(): Boolean = Yggdrasil.validate(TokenPair(accessToken, clientIdentifier))
+    suspend fun isUsable(): Boolean {
+        tokenPair?.let { pair ->
+            if (pair.accessToken != null) {
+                return Yggdrasil.validate(pair)
+            } else {
+                throw InvalidCredentialsException("Unable to determine isUsable(): access token is null in YggdrasilClient's token pair.")
+            }
+        } ?: kotlin.run {
+            throw InvalidCredentialsException("Unable to determine isUsable(): token pair is null in YggdrasilClient.")
+        }
+    }
+
 
     /**
      * Invalidate all tokens in existence associated with this account.
      *
      * @author dewy
      */
-    suspend fun signOutGlobally() {
+    suspend fun signOutWithPass() {
         Yggdrasil.signOut(username, password)
 
-        this.accessToken = ""
+        tokenPair?.let {
+            it.accessToken = null
+        }
     }
 
     /**
@@ -68,24 +79,17 @@ class YggdrasilClient {
      *
      * @author dewy
      */
-    suspend fun signOut() {
-        Yggdrasil.invalidate(TokenPair(accessToken, clientIdentifier))
+    suspend fun signOutWithToken() {
+        tokenPair?.let { pair ->
+            if (pair.accessToken != null) {
+                Yggdrasil.invalidate(pair)
 
-        this.accessToken = ""
+                pair.accessToken = null
+            } else {
+                throw InvalidCredentialsException("Unable to signOutWithToken(): access token is null in YggdrasilClient's token pair.")
+            }
+        } ?: kotlin.run {
+            throw InvalidCredentialsException("Unable to signOutWithToken(): token pair is null in YggdrasilClient.")
+        }
     }
-
-    private fun assignNewPair(pair: TokenPair) {
-        this.accessToken = pair.accessToken
-        this.clientIdentifier = pair.clientToken
-    }
-}
-
-/**
- * The [YggdrasilClient] builder.
- * [YggdrasilClient.signIn] is always ran when using this, so it's only recommended for brand new clients.
- *
- * @author dewy
- */
-suspend fun yggdrasil(block: YggdrasilClient.() -> Unit): YggdrasilClient = YggdrasilClient().apply(block).apply {
-    signIn()
 }

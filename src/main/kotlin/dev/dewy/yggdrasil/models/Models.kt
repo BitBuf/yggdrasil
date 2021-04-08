@@ -8,7 +8,7 @@ package dev.dewy.yggdrasil.models
  *
  * @author dewy
  */
-data class TokenPair(val accessToken: String, val clientToken: String)
+data class TokenPair(var accessToken: String?, val clientToken: String)
 
 /**
  * The games that use Yggdrasil as their authentication system; Minecraft and Scrolls.
