@@ -6,7 +6,7 @@ import dev.dewy.yggdrasil.models.TokenPair
 import java.util.UUID
 
 /**
- * Basic Yggdrasil "client" and higher level interface for interacting with Yggdrasil.
+ * Asynchronous Yggdrasil "client" and higher level interface for interacting with Yggdrasil.
  *
  * @author dewy
  */
@@ -29,7 +29,7 @@ class YggdrasilClient(
     }
 
     /**
-     * Refreshes your [accessToken] for use.
+     * Refreshes an expired [tokenPair]'s access token for use.
      *
      * @author dewy
      */
@@ -62,7 +62,7 @@ class YggdrasilClient(
 
 
     /**
-     * Invalidate all tokens in existence associated with this account.
+     * Invalidate this account's most recent [TokenPair].
      *
      * @author dewy
      */
@@ -75,7 +75,7 @@ class YggdrasilClient(
     }
 
     /**
-     * Invalidate this [YggdrasilClient]'s current [accessToken].
+     * Invalidate this [YggdrasilClient]'s current [TokenPair].
      *
      * @author dewy
      */

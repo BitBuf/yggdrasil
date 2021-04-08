@@ -6,6 +6,13 @@ import dev.dewy.yggdrasil.models.TokenPair
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
 
+/**
+ * A synchronous wrapper around [Yggdrasil], to allow for Java interop that won't result in depression.
+ *
+ * *I hate this system just as much as you do ._.*
+ *
+ * @author dewy
+ */
 object SyncYggdrasil {
     @JvmStatic
     fun authenticate(username: String, password: String, game: Game, uuid: UUID = UUID.randomUUID()): TokenPair {

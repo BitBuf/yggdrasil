@@ -116,7 +116,7 @@ object Yggdrasil {
     }
 
     /**
-     * Invalidate all tokens associated with an account via its [username] and [password].
+     * Invalidate the most recent [TokenPair] associated with an account via its [username] and [password].
      *
      * @param username The Mojang account's "username" (email for migrated accounts, IGN for legacy accounts).
      * @param password The Mojang account's password.

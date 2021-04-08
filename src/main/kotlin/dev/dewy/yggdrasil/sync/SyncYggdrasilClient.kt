@@ -1,12 +1,13 @@
 package dev.dewy.yggdrasil.sync
 
+import dev.dewy.yggdrasil.YggdrasilClient
 import dev.dewy.yggdrasil.models.Game
 import dev.dewy.yggdrasil.models.InvalidCredentialsException
 import dev.dewy.yggdrasil.models.TokenPair
 import java.util.UUID
 
 /**
- * Basic Yggdrasil "client" and higher level interface for interacting with Yggdrasil.
+ * Identical to the asynchronous [YggdrasilClient], except synchronous and using [SyncYggdrasil] as a backend.
  *
  * @author dewy
  */
