@@ -11,10 +11,14 @@ import java.util.UUID
  * @author dewy
  */
 class YggdrasilClient(
-    val username: String,
-    val password: String
+    var username: String?,
+    var password: String?
 ) {
     var tokenPair: TokenPair? = null
+
+    constructor(pair: TokenPair, username: String? = null, password: String? = null) : this(username, password) {
+        this.tokenPair = pair
+    }
 
     /**
      * Sign into Yggdrasil with the username and password you've set.
@@ -25,7 +29,11 @@ class YggdrasilClient(
      * @author dewy
      */
     suspend fun signIn(game: Game = Game.MINECRAFT, clientIdentifier: UUID = UUID.randomUUID()) {
-        tokenPair = Yggdrasil.authenticate(username, password, game, clientIdentifier)
+        if (username != null && password != null) {
+            tokenPair = Yggdrasil.authenticate(username!!, password!!, game, clientIdentifier)
+        } else {
+            throw InvalidCredentialsException("Unable to signIn(): username or password is null in YggdrasilClient.")
+        }
     }
 
     /**
@@ -60,17 +68,20 @@ class YggdrasilClient(
         }
     }
 
-
     /**
      * Invalidate this account's most recent [TokenPair].
      *
      * @author dewy
      */
     suspend fun signOutWithPass() {
-        Yggdrasil.signOut(username, password)
+        if (username != null && password != null) {
+            Yggdrasil.signOut(username!!, password!!)
 
-        tokenPair?.let {
-            it.accessToken = null
+            tokenPair?.let {
+                it.accessToken = null
+            }
+        } else {
+            throw InvalidCredentialsException("Unable to signOutWithPass(): username or password is null in YggdrasilClient.")
         }
     }
 

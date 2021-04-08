@@ -20,6 +20,7 @@ import kotlin.coroutines.suspendCoroutine
 
 /**
  * A set of helper functions to manually make requests to Mojang's Yggdrasil server.
+ * It's recommended to use [YggdrasilClient] to interface with Yggdrasil. This class is basically low-level, raw Yggdrasil.
  *
  * @author dewy
  */

@@ -8,19 +8,26 @@ import java.util.UUID
 
 /**
  * A synchronous wrapper around [Yggdrasil], to allow for Java interop that won't result in depression.
+ * It's recommended to use [SyncYggdrasilClient] to interface with Yggdrasil. This class is basically low-level, raw Yggdrasil.
  *
- * *I hate this system just as much as you do ._.*
+ * Yeah, I hate this as well.
  *
  * @author dewy
  */
 object SyncYggdrasil {
+    /**
+     * @see Yggdrasil.authenticate
+     */
     @JvmStatic
-    fun authenticate(username: String, password: String, game: Game, uuid: UUID = UUID.randomUUID()): TokenPair {
+    fun authenticate(username: String, password: String, game: Game = Game.MINECRAFT, uuid: UUID = UUID.randomUUID()): TokenPair {
         return runBlocking {
             Yggdrasil.authenticate(username, password, game, uuid)
         }
     }
 
+    /**
+     * @see Yggdrasil.refresh
+     */
     @JvmStatic
     fun refresh(pair: TokenPair): TokenPair {
         return runBlocking {
@@ -28,6 +35,9 @@ object SyncYggdrasil {
         }
     }
 
+    /**
+     * @see Yggdrasil.validate
+     */
     @JvmStatic
     fun validate(pair: TokenPair): Boolean {
         return runBlocking {
@@ -35,6 +45,9 @@ object SyncYggdrasil {
         }
     }
 
+    /**
+     * @see Yggdrasil.signOut
+     */
     @JvmStatic
     fun signOut(username: String, password: String) {
         runBlocking {
@@ -42,6 +55,9 @@ object SyncYggdrasil {
         }
     }
 
+    /**
+     * @see Yggdrasil.invalidate
+     */
     @JvmStatic
     fun invalidate(pair: TokenPair) {
         runBlocking {

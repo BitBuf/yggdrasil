@@ -12,10 +12,14 @@ import java.util.UUID
  * @author dewy
  */
 class SyncYggdrasilClient(
-    val username: String,
-    val password: String
+    var username: String?,
+    var password: String?
 ) {
     var tokenPair: TokenPair? = null
+
+    constructor(pair: TokenPair, username: String? = null, password: String? = null) : this(username, password) {
+        this.tokenPair = pair
+    }
 
     /**
      * Sign into Yggdrasil with the username and password you've set.
@@ -26,11 +30,15 @@ class SyncYggdrasilClient(
      * @author dewy
      */
     fun signIn(game: Game = Game.MINECRAFT, clientIdentifier: UUID = UUID.randomUUID()) {
-        tokenPair = SyncYggdrasil.authenticate(username, password, game, clientIdentifier)
+        if (username != null && password != null) {
+            tokenPair = SyncYggdrasil.authenticate(username!!, password!!, game, clientIdentifier)
+        } else {
+            throw InvalidCredentialsException("Unable to signIn(): username or password is null in SyncYggdrasilClient.")
+        }
     }
 
     /**
-     * Refreshes your [accessToken] for use.
+     * Refreshes an expired [tokenPair]'s access token for use.
      *
      * @author dewy
      */
@@ -61,22 +69,25 @@ class SyncYggdrasilClient(
         }
     }
 
-
     /**
-     * Invalidate all tokens in existence associated with this account.
+     * Invalidate this account's most recent [TokenPair].
      *
      * @author dewy
      */
     fun signOutWithPass() {
-        SyncYggdrasil.signOut(username, password)
+        if (username != null && password != null) {
+            SyncYggdrasil.signOut(username!!, password!!)
 
-        tokenPair?.let {
-            it.accessToken = null
+            tokenPair?.let {
+                it.accessToken = null
+            }
+        } else {
+            throw InvalidCredentialsException("Unable to signOutWithPass(): username or password is null in SyncYggdrasilClient.")
         }
     }
 
     /**
-     * Invalidate this [SyncYggdrasilClient]'s current [accessToken].
+     * Invalidate this [SyncYggdrasilClient]'s current [TokenPair].
      *
      * @author dewy
      */
